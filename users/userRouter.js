@@ -105,7 +105,10 @@ router.put('/:id', (req, res) => {
 
 function validateUserId(req, res, next) {
   // do your magic!
-  
+ /*  dbUser.getById(req.params.id)
+    then(res => {
+      if 
+    }) */
 }
 
 function validateUser(req, res, next) {
