@@ -3,7 +3,7 @@ const dbUser = require('./userDb')
 const dbPost = require('../posts/postDb')
 const router = express.Router();
 
-router.post('/', (req, res) => {
+router.post('/', validateUser, (req, res) => {
   dbUser.insert(req.body)
     .then(newUser => {
       res.status(201).json(newUser)
@@ -16,7 +16,7 @@ router.post('/', (req, res) => {
     })
 });
 
-router.post('/:id/posts', (req, res) => {
+router.post('/:id/posts', validateUserId, (req, res) => {
     const {id} =  req.params;
     const body = {...req.body, user_id: id}
     dbPost.insert(body)
@@ -45,7 +45,7 @@ router.get('/', (req, res) => {
 })
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', validateUserId, (req, res) => {
   dbUser.getById(req.params.id)
   .then(user => {
     res.status(200).json(user);
@@ -58,7 +58,7 @@ router.get('/:id', (req, res) => {
   })
 });
 
-router.get('/:id/posts', (req, res) => {
+router.get('/:id/posts', validateUserId, (req, res) => {
   // do your magic!
   dbUser.getUserPosts(req.params.id)
   .then(userPosts => {
@@ -72,7 +72,7 @@ router.get('/:id/posts', (req, res) => {
   })
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', validateUserId, (req, res) => {
   // do your magic!
   dbUser.remove(req.params.id)
   .then(deleted => {
@@ -86,7 +86,7 @@ router.delete('/:id', (req, res) => {
   })
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', validateUserId, validateUser, (req, res) => {
   // do your magic!
   const changes = req.body;
   dbUser.update(req.params.id, changes)
@@ -105,15 +105,40 @@ router.put('/:id', (req, res) => {
 
 function validateUserId(req, res, next) {
   // do your magic!
- /*  dbUser.getById(req.params.id)
-    then(res => {
-      if 
-    }) */
+  const {id} = req.params;
+  dbUser.getById(id)
+    .then(validUser => {
+      if (validUser) {
+        req.user = {...id};
+        next();
+      } else {
+        res.status(404).json({
+        errorMessage: 'Sorry, the user with that ID was not found...'
+        });
+      }
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(400).json(`
+      invalid user id.
+      `)
+    })
 }
 
 function validateUser(req, res, next) {
-  // do your magic!
-}
+  // validates the `body` on a request to create a new user
+  if (!req.body) {
+    res.status(400).json({
+      message: 'missing user data'
+    });
+  } else if (!req.body.name) {
+      res.status(400).json({
+        message: 'missing required name field'
+      });
+  } else {
+      next();
+  };
+};
 
 function validatePost(req, res, next) {
   // do your magic!
